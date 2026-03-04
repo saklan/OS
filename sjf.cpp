@@ -181,11 +181,15 @@ void solve() {
                     mn = p[i].brust;
                     idx = i;
                 }
+                else if(p[i].brust == mn){
+                    if(p[i].arrive < p[idx].arrive) idx = i;
+                }
 
             }
         }
         if(idx == -1){
             counter++;
+            continue;
         }else{
             p[idx].rt = (counter-p[idx].arrive);
             counter += p[idx].brust;
@@ -199,9 +203,9 @@ void solve() {
             x++;
         }
 
-        sort(p.begin(),p.end(),[](const sjf &a , const sjf &b){
-            return a.compile < b.compile;
-        });
+//        sort(p.begin(),p.end(),[](const sjf &a , const sjf &b){
+//            return a.compile < b.compile;
+//        });
     }
 
     cout << endl << endl << "PName\tAv\tBT\tCT\tTAT\tWT\tRT" <<  endl << "___________________________________________________"<<endl;

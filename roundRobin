@@ -1,0 +1,136 @@
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <iomanip>
+
+using namespace std;
+
+struct Process {
+    int id;
+    int att, bt, rt;
+    int ct, tat, wt, res;
+    bool visited = false;
+    bool in_queue = false;
+};
+
+
+void printQueue(queue<int> q, Process p[]) {
+    cout << "[ ";
+    while (!q.empty()) {
+        cout << "P" << p[q.front()].id << " ";
+        q.pop();
+    }
+    cout << "]";
+}
+
+int main() {
+    int n, tq;
+
+    cout << "Enter n and time quantum: ";
+    if (!(cin >> n >> tq)) return 0;
+
+    Process p[n];
+
+    cout << "Enter all " << n << " process arrival times: ";
+    for (int i = 0; i < n; i++) {
+        p[i].id = i + 1;
+        cin >> p[i].att;
+    }
+
+    cout << "Enter all " << n << " process burst times: ";
+    for (int i = 0; i < n; i++) {
+        cin >> p[i].bt;
+        p[i].rt = p[i].bt;
+    }
+
+    queue<int> q;
+    vector<pair<int, int>> gantt; // {process_id, end_time}
+    int time = 0, completed = 0;
+
+    cout << "\n--- Execution Steps ---\n";
+
+    // Initial check for time 0
+    for (int i = 0; i < n; i++) {
+        if (p[i].att <= time) {
+            q.push(i);
+            p[i].in_queue = true;
+        }
+    }
+
+    while (completed < n) {
+        if (q.empty()) {
+            time++;
+            for (int i = 0; i < n; i++) {
+                if (p[i].att <= time && !p[i].in_queue) {
+                    q.push(i);
+                    p[i].in_queue = true;
+                }
+            }
+            continue;
+        }
+
+        int i = q.front();
+        q.pop();
+
+        // Response Time
+        if (!p[i].visited) {
+            p[i].res = time - p[i].att;
+            p[i].visited = true;
+        }
+
+        // Execution
+        int execute_time = min(p[i].rt, tq);
+        time += execute_time;
+        p[i].rt -= execute_time;
+
+        gantt.push_back({p[i].id, time});
+
+        // Debug: Print Ready Queue state
+        cout << "Time " << time - execute_time << " to " << time << " | P" << p[i].id << " | Ready Queue: ";
+
+        // Add new arrivals during execution
+        for (int j = 0; j < n; j++) {
+            if (p[j].att <= time && !p[j].in_queue && p[j].rt > 0) {
+                q.push(j);
+                p[j].in_queue = true;
+            }
+        }
+
+        if (p[i].rt > 0) {
+            q.push(i); // Re-add current process
+        } else {
+            completed++;
+            p[i].ct = time;
+            p[i].tat = p[i].ct - p[i].att;
+            p[i].wt = p[i].tat - p[i].bt;
+        }
+
+        printQueue(q, p);
+        cout << endl;
+    }
+
+    // Gantt Chart Print
+    cout << "\n--- Gantt Chart ---\n|";
+    for (auto g : gantt) cout << "  P" << g.first << "  |";
+    cout << "\n0";
+    for (auto g : gantt) cout << setw(7) << g.second;
+    cout << endl;
+
+    // Final Table and Averages
+    float total_wt = 0, total_tat = 0, total_res = 0;
+    cout << "\nPID\tATT\tBT\tCT\tTAT\tWT\tRT\n";
+    for (int i = 0; i < n; i++) {
+        cout << p[i].id << "\t" << p[i].att << "\t" << p[i].bt << "\t"
+             << p[i].ct << "\t" << p[i].tat << "\t" << p[i].wt << "\t" << p[i].res << endl;
+        total_wt += p[i].wt;
+        total_tat += p[i].tat;
+        total_res += p[i].res;
+    }
+
+    cout << fixed << setprecision(2);
+    cout << "\nAverage Waiting Time: " << total_wt / n;
+    cout << "\nAverage Turnaround Time: " << total_tat / n;
+    cout << "\nAverage Response Time: " << total_res / n << endl;
+
+    return 0;
+}
